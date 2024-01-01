@@ -1,3 +1,5 @@
+mod messages;
+
 use std::env;
 
 fn main() {
@@ -7,6 +9,7 @@ fn main() {
     //let function_arg = &args[1];
 
     match args[1].as_str() {
+        "help" => println!("{}", messages::get_help_message()),
         "create" => println!("created a link repo!"),
         _ => println!(
             "Unknown command. Use {} help for more information.",
