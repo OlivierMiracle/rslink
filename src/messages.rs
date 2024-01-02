@@ -21,6 +21,5 @@ Available commands:
     link             - Commands involved with creating a link
 ";
 
-pub fn get_help_message() -> &'static str {
-    HELP_MESSAGE
-}
+pub const UNKNOWN_COMMAND_MESSAGE: &str =
+    "Unknown command. Please refer to 'rslink help' for further guidance.";
