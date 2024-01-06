@@ -2,9 +2,17 @@ mod linker;
 mod messages;
 mod repo;
 
-use std::{env, usize};
+mod add;
+mod create;
+mod delete;
+mod update;
 
-use crate::repo::delete_repo;
+use std::env;
+
+use crate::add::AddCommand;
+use crate::create::CreateCommand;
+use crate::delete::DeleteCommand;
+use crate::update::UpdateCommand;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -17,87 +25,19 @@ fn main() {
 
     let command: Command = match args[1].as_str() {
         "help" => Command::Help(messages::HELP_MESSAGE.to_string()),
-        "create" => {
-            let mut create_command: CreateCommand = CreateCommand {
-                ..Default::default()
-            };
-            let c_max = &args.len();
-            let mut c: usize = 2usize;
-            loop {
-                if !(&c < c_max) {
-                    break;
-                }
-
-                let arg = &args[c];
-                dbg!(&arg);
-
-                match arg.as_str() {
-                    "-f" | "--force" => create_command.is_forced = Option::Some(true),
-                    "-i" | "--initialize" => create_command.inilialize = Option::Some(true),
-                    "-p" | "--path" => {
-                        if c + 1 < *c_max {
-                            create_command.path = Option::Some(args[&c + 1].to_string());
-                            c += 1usize;
-                        } else {
-                            println!("No path given in path argument LOL.");
-                        }
-                    }
-                    _ => {
-                        println!("{}", messages::INVALID_PARAMETER_MESSAGE);
-                        return;
-                    }
-                }
-
-                c += 1usize;
-            }
-
-            Command::Create(create_command)
-        }
-        "delete" => {
-            let mut delete_command: DeleteCommand = DeleteCommand {
-                ..Default::default()
-            };
-
-            let c_max = &args.len();
-            let mut c: usize = 2usize;
-            loop {
-                if !(&c < c_max) {
-                    break;
-                }
-
-                let arg = &args[c];
-                dbg!(&arg);
-
-                match arg.as_str() {
-                    "-f" | "--force" => delete_command.is_forced = Option::Some(true),
-                    "-p" | "--path" => {
-                        if c + 1 < *c_max {
-                            delete_command.path = Option::Some(args[&c + 1].to_string());
-                            c += 1usize;
-                        } else {
-                            println!("No path given in path argument LOL.");
-                        }
-                    }
-                    _ => {
-                        println!("{}", messages::INVALID_PARAMETER_MESSAGE);
-                        return;
-                    }
-                }
-
-                c += 1usize;
-            }
-
-            Command::Delete(delete_command)
-        }
-        "update" => Command::Update(),
+        "create" => create::create_parse(args),
+        "delete" => delete::delete_parse(args),
+        "update" => update::update_parse(args),
+        "add" => add::add_parse(args),
         _ => Command::Help(messages::UNKNOWN_COMMAND_MESSAGE.to_string()),
     };
 
     match command {
         Command::Help(message) => println!("{}", message),
-        Command::Create(create_command) => repo::create_repo(create_command),
-        Command::Delete(delete_command) => repo::delete_repo(delete_command),
-        Command::Update() => repo::update_repo(),
+        Command::Create(create_command) => create::create_repo(create_command),
+        Command::Delete(delete_command) => delete::delete_repo(delete_command),
+        Command::Update(update_command) => update::update_repo(update_command),
+        Command::Add(add_command) => add::add(add_command),
         _ => println!(),
     }
 }
@@ -106,27 +46,15 @@ enum Command {
     Help(String),
     Create(CreateCommand),
     Delete(DeleteCommand),
+    Update(UpdateCommand),
     Status(StatusCommand),
+    Add(AddCommand),
     AddDestination(),
-    Update(),
-}
-
-#[derive(Default)]
-struct CreateCommand {
-    is_forced: Option<bool>,
-    inilialize: Option<bool>,
-    path: Option<String>,
-}
-
-#[derive(Default)]
-struct DeleteCommand {
-    path: Option<String>,
-    is_forced: Option<bool>,
 }
 
 struct StatusCommand {
     path: Option<String>,
-    if_destinations: Option<bool>,
-    if_added: Option<bool>,
-    if_deleted: Option<bool>,
+    if_destinations: bool,
+    if_added: bool,
+    if_deleted: bool,
 }

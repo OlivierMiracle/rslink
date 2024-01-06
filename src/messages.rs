@@ -38,8 +38,13 @@ pub const UNKNOWN_COMMAND_MESSAGE: &str =
 pub const INVALID_PARAMETER_MESSAGE: &str =
     "Invalid parameter. Please check your spelling or sanity. Thanks :3";
 
+pub const LACKING_PARAMETER_MESSAGE: &str =
+    "Your command lacks required parameter. Make sure you include it.";
+
 pub const REPO_ALREADY_EXISTS_MESSAGE: &str =
     "You are trying to create a repo where it already exists. Delete it or force creation of new one.";
 
 pub const REPO_DOES_NOT_EXIST_MESSAGE: &str =
     "Repo does not exist at that location. Try your luck somewhere else :D";
+
+pub const NOT_A_FILE_MESSAGE: &str = "A path does not lead to a file. I'm puzzled...";
