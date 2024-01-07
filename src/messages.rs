@@ -32,6 +32,8 @@ Available commands:
         -r | --repository   _ Updated tracked files in repository
 ";
 
+pub const SUCCESSFUL_MESSAGE: &str = r"Executed succesfully, Yay!  ~\(≧▽≦)/~";
+
 pub const UNKNOWN_COMMAND_MESSAGE: &str =
     "Unknown command. Please refer to 'rslink help' for further guidance.";
 
@@ -48,3 +50,13 @@ pub const REPO_DOES_NOT_EXIST_MESSAGE: &str =
     "Repo does not exist at that location. Try your luck somewhere else :D";
 
 pub const NOT_A_FILE_MESSAGE: &str = "A path does not lead to a file. I'm puzzled...";
+
+pub const FILE_READ_ERROR_MESSAGE: &str = "There is a problem with reading a file";
+
+pub const FILE_WRITE_ERROR_MESSAGE: &str =
+    r"There is a problem with writing to a file ¯\_( ͡° ͜ʖ ͡°)_/¯";
+
+pub const FILE_OPEN_ERROR_MESSAGE: &str = "File cannot be open. Ups...";
+
+pub const ALREADY_LINKED_MESSAGE: &str =
+    "File was already linked, don't make me to do things twice ;-;";

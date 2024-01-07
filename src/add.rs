@@ -1,4 +1,5 @@
 use std::fs::OpenOptions;
+use std::io::Read;
 use std::io::Write;
 use std::ops::Add;
 use std::path::PathBuf;
@@ -14,7 +15,6 @@ pub struct AddCommand {
     path: Option<String>,
     file_path: Option<String>,
     is_all: bool,
-    add_hidden: bool,
 }
 
 pub fn add_parse(args: Vec<String>) -> Command {
@@ -49,7 +49,6 @@ pub fn add_parse(args: Vec<String>) -> Command {
                 }
             }
             "-a" | "--all" => add_command.is_all = true,
-            "-h" | "--hidden" => add_command.add_hidden = true,
             _ => return Command::Help(messages::INVALID_PARAMETER_MESSAGE.to_string()),
         }
 
@@ -59,31 +58,19 @@ pub fn add_parse(args: Vec<String>) -> Command {
     Command::Add(add_command)
 }
 
-pub fn add(command: AddCommand) {
+pub fn add<'a>(command: AddCommand) -> Result<&'a str, &'a str> {
     let path = match repo::validate_path(command.path, false) {
         Ok(path) => path,
-        Err(_) => return,
+        Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
     };
 
     if !command.is_all {
         let file_path = match repo::validate_path(command.file_path, true) {
             Ok(file_path) => file_path,
-            Err(_) => return,
+            Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
         };
 
-        let is_file_hidden = match repo::is_hidden(&file_path) {
-            Ok(is_hidden) => is_hidden,
-            Err(err) => {
-                println!("{}", err);
-                return;
-            }
-        };
-
-        if is_file_hidden && !command.add_hidden {
-            return;
-        }
-
-        add_file_to_linked(path, file_path);
+        add_file_to_linked(path, file_path)
     } else {
         for entry in WalkDir::new(&path)
             .into_iter()
@@ -97,51 +84,58 @@ pub fn add(command: AddCommand) {
                 continue;
             }
 
-            let is_file_hidden = match repo::is_hidden(&entry.clone().into_path().to_path_buf()) {
-                Ok(is_hidden) => is_hidden,
-                Err(err) => {
-                    println!("{}", err);
-                    continue;
-                }
-            };
-
-            if is_file_hidden && !command.add_hidden {
-                return;
-            }
-
             println!("{}", entry.path().display());
-            add_file_to_linked(path.clone(), entry.into_path().to_path_buf());
+            match add_file_to_linked(path.clone(), entry.into_path().to_path_buf()) {
+                Ok(_) => (),
+                Err(message) => println!("{}", message),
+            }
         }
+        Ok(messages::SUCCESSFUL_MESSAGE)
     }
 }
 
-fn add_file_to_linked(path: PathBuf, file_path: PathBuf) {
+fn add_file_to_linked<'a>(path: PathBuf, file_path: PathBuf) -> Result<&'a str, &'a str> {
     let mut linked_path = path.clone();
     linked_path.push(".rslink/linked.txt");
     dbg!(&linked_path);
     let mut linked_file = match OpenOptions::new()
+        .read(true)
         .write(true)
         .append(true)
         .open(linked_path)
     {
         Ok(file) => file,
-        Err(err) => {
-            eprintln!("{}", err.to_string());
-            return;
+        Err(_) => {
+            return Err(messages::FILE_OPEN_ERROR_MESSAGE);
         }
     };
 
-    let line;
-
-    let buf = match file_path.to_str() {
-        Some(path) => {
-            line = path.to_string().add("\n");
-            line.as_bytes()
-        }
-        None => {
-            return;
-        }
+    let path_entry = match file_path.to_str() {
+        Some(path) => path.to_string().add("\n"),
+        None => return Err(messages::INVALID_PARAMETER_MESSAGE),
     };
 
-    linked_file.write(buf);
+    let mut linked_contents: String = "".to_string();
+    match linked_file.read_to_string(&mut linked_contents) {
+        Ok(_) => (),
+        Err(_) => return Err(messages::FILE_READ_ERROR_MESSAGE),
+    }
+
+    for row in linked_contents.lines() {
+        let col: Vec<&str> = row.split(' ').collect();
+
+        if col[1].trim() == path_entry.trim() {
+            return Err(messages::ALREADY_LINKED_MESSAGE);
+        }
+    }
+
+    let line = "link ".to_string() + path_entry.as_str();
+    let buf = line.as_bytes();
+
+    match linked_file.write(buf) {
+        Ok(_) => (),
+        Err(_) => return Err(messages::FILE_WRITE_ERROR_MESSAGE),
+    }
+
+    Ok(messages::HELP_MESSAGE)
 }

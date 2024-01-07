@@ -12,13 +12,6 @@ pub fn is_rslink(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-pub fn is_hidden(entry: &PathBuf) -> Result<bool, &str> {
-    match entry.file_name() {
-        Some(entry) => Ok(entry.to_str().map(|s| s.starts_with(".")).unwrap_or(false)),
-        None => return Err(messages::NOT_A_FILE_MESSAGE),
-    }
-}
-
 pub fn validate_path(path: Option<String>, is_required: bool) -> Result<PathBuf, String> {
     match path {
         Some(given_path) => {

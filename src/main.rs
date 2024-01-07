@@ -1,10 +1,10 @@
-mod linker;
 mod messages;
 mod repo;
 
 mod add;
 mod create;
 mod delete;
+mod remove;
 mod update;
 
 use std::env;
@@ -37,7 +37,10 @@ fn main() {
         Command::Create(create_command) => create::create_repo(create_command),
         Command::Delete(delete_command) => delete::delete_repo(delete_command),
         Command::Update(update_command) => update::update_repo(update_command),
-        Command::Add(add_command) => add::add(add_command),
+        Command::Add(add_command) => match add::add(add_command) {
+            Ok(message) => println!("{}", message),
+            Err(message) => eprintln!("{}", message),
+        },
         _ => println!(),
     }
 }
