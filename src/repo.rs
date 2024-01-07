@@ -1,8 +1,18 @@
-use std::{env::current_dir, ffi::OsStr, path::PathBuf};
+use std::{env::current_dir, ffi::OsStr, path::Path, path::PathBuf};
 
 use walkdir::DirEntry;
 
 use crate::messages::{self, INVALID_PARAMETER_MESSAGE};
+
+pub fn is_in_repo(path: &PathBuf) -> bool {
+    if path.is_dir() {
+        let mut rs_path = path.clone();
+        rs_path.push(".rslink/");
+        rs_path.try_exists().unwrap_or(false)
+    } else {
+        false
+    }
+}
 
 pub fn is_rslink(entry: &DirEntry) -> bool {
     entry

@@ -49,6 +49,9 @@ pub const REPO_ALREADY_EXISTS_MESSAGE: &str =
 pub const REPO_DOES_NOT_EXIST_MESSAGE: &str =
     "Repo does not exist at that location. Try your luck somewhere else :D";
 
+pub const REPO_NOT_FOUND_MESSAGE: &str =
+    "Repo was not found. Please ensure that path given is correct.";
+
 pub const NOT_A_FILE_MESSAGE: &str = "A path does not lead to a file. I'm puzzled...";
 
 pub const FILE_READ_ERROR_MESSAGE: &str = "There is a problem with reading a file";

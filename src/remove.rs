@@ -1,26 +1,19 @@
+use crate::messages;
+use crate::repo;
+use crate::Command;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 use std::ops::Add;
-use std::path::PathBuf;
-
-use crate::messages;
-use crate::repo;
-use crate::Command;
-
-use walkdir::WalkDir;
 
 #[derive(Default)]
-pub struct AddCommand {
+pub struct RemoveCommand {
     path: Option<String>,
     file_path: Option<String>,
-    is_all: bool,
 }
 
-pub fn add_parse(args: Vec<String>) -> Command {
-    let mut add_command = AddCommand {
-        ..Default::default()
-    };
+pub fn remove_parse(args: Vec<String>) -> Command {
+    let mut remove_command = RemoveCommand::default();
 
     let c_max = &args.len();
     let mut c: usize = 2usize;
@@ -34,7 +27,7 @@ pub fn add_parse(args: Vec<String>) -> Command {
         match arg.as_str() {
             "-p" | "--path" => {
                 if c + 1 < *c_max {
-                    add_command.path = Option::Some(args[&c + 1].to_string());
+                    remove_command.path = Option::Some(args[&c + 1].to_string());
                     c += 1usize;
                 } else {
                     println!("No path given in path argument LOL");
@@ -42,23 +35,22 @@ pub fn add_parse(args: Vec<String>) -> Command {
             }
             "-f" | "--file" => {
                 if c + 1 < *c_max {
-                    add_command.file_path = Option::Some(args[&c + 1].to_string());
+                    remove_command.file_path = Option::Some(args[&c + 1].to_string());
                     c += 1usize;
                 } else {
                     println!("What file should I add? ;-;");
                 }
             }
-            "-a" | "--all" => add_command.is_all = true,
             _ => return Command::Help(messages::INVALID_PARAMETER_MESSAGE.to_string()),
         }
 
         c += 1usize;
     }
 
-    Command::Add(add_command)
+    Command::Remove(remove_command)
 }
 
-pub fn add<'a>(command: AddCommand) -> Result<&'a str, &'a str> {
+pub fn remove<'a>(command: RemoveCommand) -> Result<&'a str, &'a str> {
     let path = match repo::validate_path(command.path, false) {
         Ok(path) => path,
         Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
@@ -68,37 +60,11 @@ pub fn add<'a>(command: AddCommand) -> Result<&'a str, &'a str> {
         return Err(messages::REPO_NOT_FOUND_MESSAGE);
     }
 
-    if !command.is_all {
-        let file_path = match repo::validate_path(command.file_path, true) {
-            Ok(file_path) => file_path,
-            Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
-        };
+    let file_path = match repo::validate_path(command.file_path, true) {
+        Ok(file_path) => file_path,
+        Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
+    };
 
-        add_file_to_linked(path, file_path)
-    } else {
-        for entry in WalkDir::new(&path)
-            .into_iter()
-            .filter_entry(|e| !repo::is_rslink(e))
-            .filter_map(|e| e.ok())
-        {
-            if repo::is_rslink(&entry) {
-                continue;
-            }
-            if !entry.path().metadata().unwrap().is_file() {
-                continue;
-            }
-
-            println!("{}", entry.path().display());
-            match add_file_to_linked(path.clone(), entry.into_path().to_path_buf()) {
-                Ok(_) => (),
-                Err(message) => println!("{}", message),
-            }
-        }
-        Ok(messages::SUCCESSFUL_MESSAGE)
-    }
-}
-
-fn add_file_to_linked<'a>(path: PathBuf, file_path: PathBuf) -> Result<&'a str, &'a str> {
     let mut linked_path = path.clone();
     linked_path.push(".rslink/linked.txt");
 
@@ -120,26 +86,33 @@ fn add_file_to_linked<'a>(path: PathBuf, file_path: PathBuf) -> Result<&'a str, 
     };
 
     let mut linked_contents: String = "".to_string();
+
     match linked_file.read_to_string(&mut linked_contents) {
         Ok(_) => (),
         Err(_) => return Err(messages::FILE_READ_ERROR_MESSAGE),
     }
 
+    linked_file.set_len(0);
+
+    let mut counter = 0;
+
     for row in linked_contents.lines() {
         let col: Vec<&str> = row.split(' ').collect();
 
         if col[1].trim() == path_entry.trim() {
-            return Err(messages::ALREADY_LINKED_MESSAGE);
+            println!("{}", row);
+            counter += 1;
+            continue;
         }
+        let row = row.to_string().add("\n");
+        let buf = row.as_bytes();
+
+        linked_file.write(buf);
     }
 
-    let line = "link ".to_string() + path_entry.as_str();
-    let buf = line.as_bytes();
-
-    match linked_file.write(buf) {
-        Ok(_) => (),
-        Err(_) => return Err(messages::FILE_WRITE_ERROR_MESSAGE),
-    }
-
+    println!(
+        "{}",
+        "Files removed: ".to_string() + counter.to_string().as_str()
+    );
     Ok(messages::SUCCESSFUL_MESSAGE)
 }

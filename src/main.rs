@@ -12,6 +12,7 @@ use std::env;
 use crate::add::AddCommand;
 use crate::create::CreateCommand;
 use crate::delete::DeleteCommand;
+use crate::remove::RemoveCommand;
 use crate::update::UpdateCommand;
 
 fn main() {
@@ -29,6 +30,7 @@ fn main() {
         "delete" => delete::delete_parse(args),
         "update" => update::update_parse(args),
         "add" => add::add_parse(args),
+        "remove" => remove::remove_parse(args),
         _ => Command::Help(messages::UNKNOWN_COMMAND_MESSAGE.to_string()),
     };
 
@@ -37,11 +39,16 @@ fn main() {
         Command::Create(create_command) => create::create_repo(create_command),
         Command::Delete(delete_command) => delete::delete_repo(delete_command),
         Command::Update(update_command) => update::update_repo(update_command),
-        Command::Add(add_command) => match add::add(add_command) {
-            Ok(message) => println!("{}", message),
-            Err(message) => eprintln!("{}", message),
-        },
+        Command::Add(add_command) => result_print(add::add(add_command)),
+        Command::Remove(remove_command) => result_print(remove::remove(remove_command)),
         _ => println!(),
+    }
+}
+
+fn result_print(result: Result<&str, &str>) {
+    match result {
+        Ok(message) => println!("{}", message),
+        Err(message) => eprintln!("{}", message),
     }
 }
 
@@ -52,6 +59,7 @@ enum Command {
     Update(UpdateCommand),
     Status(StatusCommand),
     Add(AddCommand),
+    Remove(RemoveCommand),
     AddDestination(),
 }
 
