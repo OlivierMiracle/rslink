@@ -1,4 +1,6 @@
+mod flags;
 mod messages;
+mod parser;
 mod repo;
 
 mod add;
@@ -9,11 +11,12 @@ mod update;
 
 use std::env;
 
+use crate::parser::Argument;
+
 use crate::add::AddCommand;
 use crate::create::CreateCommand;
 use crate::delete::DeleteCommand;
 use crate::remove::RemoveCommand;
-use crate::update::UpdateCommand;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -56,7 +59,7 @@ enum Command {
     Help(String),
     Create(CreateCommand),
     Delete(DeleteCommand),
-    Update(UpdateCommand),
+    Update(Vec<Argument>),
     Status(StatusCommand),
     Add(AddCommand),
     Remove(RemoveCommand),
