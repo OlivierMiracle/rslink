@@ -1,57 +1,20 @@
 use crate::messages;
+use crate::parser::Argument;
+use crate::parser::ArgumentPackage;
 use crate::repo;
-use crate::Command;
 use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 use std::ops::Add;
 
-#[derive(Default)]
-pub struct RemoveCommand {
-    path: Option<String>,
-    file_path: Option<String>,
+pub fn remove_flags() -> Vec<Argument> {
+    let args: Vec<Argument> = vec![Argument::path(), Argument::file()];
+
+    args
 }
 
-pub fn remove_parse(args: Vec<String>) -> Command {
-    let mut remove_command = RemoveCommand::default();
-
-    let c_max = &args.len();
-    let mut c: usize = 2usize;
-    loop {
-        if &c >= c_max {
-            break;
-        }
-
-        let arg = &args[c];
-
-        match arg.as_str() {
-            "-p" | "--path" => {
-                if c + 1 < *c_max {
-                    remove_command.path = Option::Some(args[&c + 1].to_string());
-                    c += 1usize;
-                } else {
-                    println!("No path given in path argument LOL");
-                }
-            }
-            "-f" | "--file" => {
-                if c + 1 < *c_max {
-                    remove_command.file_path = Option::Some(args[&c + 1].to_string());
-                    c += 1usize;
-                } else {
-                    println!("What file should I add? ;-;");
-                }
-            }
-            _ => return Command::Help(messages::INVALID_PARAMETER_MESSAGE.to_string()),
-        }
-
-        c += 1usize;
-    }
-
-    Command::Remove(remove_command)
-}
-
-pub fn remove<'a>(command: RemoveCommand) -> Result<&'a str, &'a str> {
-    let path = match repo::validate_path(command.path, false) {
+pub fn remove<'a>(args: ArgumentPackage) -> Result<&'a str, &'a str> {
+    let path = match repo::validate_path(args.path, false) {
         Ok(path) => path,
         Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
     };
@@ -60,7 +23,7 @@ pub fn remove<'a>(command: RemoveCommand) -> Result<&'a str, &'a str> {
         return Err(messages::REPO_NOT_FOUND_MESSAGE);
     }
 
-    let file_path = match repo::validate_path(command.file_path, true) {
+    let file_path = match repo::validate_path(args.file, true) {
         Ok(file_path) => file_path,
         Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
     };

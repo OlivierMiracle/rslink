@@ -63,3 +63,6 @@ pub const FILE_OPEN_ERROR_MESSAGE: &str = "File cannot be open. Ups...";
 
 pub const ALREADY_LINKED_MESSAGE: &str =
     "File was already linked, don't make me to do things twice ;-;";
+
+pub const IMPOSSIBLE_ERROR_MESSAGE: &str =
+    "This error message should never display itself. If it is, we are doomed  ┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻";

@@ -1,56 +1,17 @@
-use crate::messages;
-use crate::repo;
-use crate::Command;
+use crate::parser::Argument;
+use crate::{messages, parser::ArgumentPackage};
 
 use std::fs::{create_dir, remove_dir_all, File};
+use std::path::PathBuf;
 
-#[derive(Default)]
-pub struct CreateCommand {
-    path: Option<String>,
-    is_forced: bool,
+pub fn create_flags() -> Vec<Argument> {
+    let args: Vec<Argument> = vec![Argument::path(), Argument::forced()];
+
+    args
 }
 
-pub fn create_parse(args: Vec<String>) -> Command {
-    let mut create_command: CreateCommand = CreateCommand {
-        ..Default::default()
-    };
-    let c_max = &args.len();
-    let mut c: usize = 2usize;
-    loop {
-        if &c >= c_max {
-            break;
-        }
-
-        let arg = &args[c];
-        dbg!(&arg);
-
-        match arg.as_str() {
-            "-f" | "--force" => create_command.is_forced = true,
-            "-p" | "--path" => {
-                if c + 1 < *c_max {
-                    create_command.path = Option::Some(args[&c + 1].to_string());
-                    c += 1usize;
-                } else {
-                    println!("No path given in path argument LOL.");
-                }
-            }
-            _ => return Command::Help(messages::INVALID_PARAMETER_MESSAGE.to_string()),
-        }
-
-        c += 1usize;
-    }
-
-    Command::Create(create_command)
-}
-
-pub fn create_repo(command: CreateCommand) {
-    let path = match repo::validate_path(command.path, false) {
-        Ok(path) => path,
-        Err(_) => return,
-    };
-    let is_forced = command.is_forced;
-
-    let mut rslink_path = path.clone();
+pub fn create_repo(args: ArgumentPackage) {
+    let mut rslink_path = PathBuf::from(&args.path.unwrap());
     rslink_path.push(".rslink/");
     let dir_exists: bool = rslink_path.exists();
 
@@ -58,7 +19,7 @@ pub fn create_repo(command: CreateCommand) {
     //
     //
 
-    if dir_exists && !is_forced {
+    if dir_exists && !args.forced {
         println!("{}", messages::REPO_ALREADY_EXISTS_MESSAGE);
         return;
     } else if dir_exists {
