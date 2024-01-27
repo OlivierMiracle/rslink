@@ -4,6 +4,7 @@ mod repo;
 mod add;
 mod create;
 mod delete;
+mod ignore;
 mod remove;
 mod update;
 
@@ -12,6 +13,7 @@ use std::env;
 use crate::add::AddCommand;
 use crate::create::CreateCommand;
 use crate::delete::DeleteCommand;
+use crate::ignore::IgnoreCommand;
 use crate::remove::RemoveCommand;
 use crate::update::UpdateCommand;
 
@@ -31,6 +33,7 @@ fn main() {
         "update" => update::update_parse(args),
         "add" => add::add_parse(args),
         "remove" => remove::remove_parse(args),
+        "ignore" => ignore::ignore_parse(args),
         _ => Command::Help(messages::UNKNOWN_COMMAND_MESSAGE.to_string()),
     };
 
@@ -41,6 +44,7 @@ fn main() {
         Command::Update(update_command) => update::update_repo(update_command),
         Command::Add(add_command) => result_print(add::add(add_command)),
         Command::Remove(remove_command) => result_print(remove::remove(remove_command)),
+        Command::Ignore(ignore_command) => result_print(ignore::ignore(ignore_command)),
         _ => println!(),
     }
 }
@@ -61,6 +65,7 @@ enum Command {
     Add(AddCommand),
     Remove(RemoveCommand),
     AddDestination(),
+    Ignore(IgnoreCommand),
 }
 
 struct StatusCommand {
