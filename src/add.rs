@@ -5,78 +5,33 @@ use std::ops::Add;
 use std::path::PathBuf;
 
 use crate::messages;
+use crate::parser::Argument;
+use crate::parser::ArgumentPackage;
 use crate::repo;
-use crate::Command;
 
 use walkdir::WalkDir;
 
-#[derive(Default)]
-pub struct AddCommand {
-    path: Option<String>,
-    file_path: Option<String>,
-    is_all: bool,
+pub fn add_flags() -> Vec<Argument> {
+    let args: Vec<Argument> = vec![Argument::path(), Argument::file(), Argument::all()];
+
+    args
 }
 
-pub fn add_parse(args: Vec<String>) -> Command {
-    let mut add_command = AddCommand {
-        ..Default::default()
-    };
-
-    let c_max = &args.len();
-    let mut c: usize = 2usize;
-    loop {
-        if &c >= c_max {
-            break;
-        }
-
-        let arg = &args[c];
-
-        match arg.as_str() {
-            "-p" | "--path" => {
-                if c + 1 < *c_max {
-                    add_command.path = Option::Some(args[&c + 1].to_string());
-                    c += 1usize;
-                } else {
-                    println!("No path given in path argument LOL");
-                }
-            }
-            "-f" | "--file" => {
-                if c + 1 < *c_max {
-                    add_command.file_path = Option::Some(args[&c + 1].to_string());
-                    c += 1usize;
-                } else {
-                    println!("What file should I add? ;-;");
-                }
-            }
-            "-a" | "--all" => add_command.is_all = true,
-            _ => return Command::Help(messages::INVALID_PARAMETER_MESSAGE.to_string()),
-        }
-
-        c += 1usize;
-    }
-
-    Command::Add(add_command)
-}
-
-pub fn add<'a>(command: AddCommand) -> Result<&'a str, &'a str> {
-    let path = match repo::validate_path(command.path, false) {
-        Ok(path) => path,
-        Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
-    };
-
-    if !repo::is_in_repo(&path) {
+pub fn add<'a>(args: ArgumentPackage) -> Result<&'a str, &'a str> {
+    let path_buf = PathBuf::from(&args.path.unwrap());
+    if !repo::is_in_repo(&path_buf) {
         return Err(messages::REPO_NOT_FOUND_MESSAGE);
     }
 
-    if !command.is_all {
-        let file_path = match repo::validate_path(command.file_path, true) {
+    if !args.all {
+        let file_path = match repo::validate_path(args.file, true) {
             Ok(file_path) => file_path,
             Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
         };
 
-        add_file_to_linked(path, file_path)
+        add_file_to_linked(path_buf, file_path)
     } else {
-        for entry in WalkDir::new(&path)
+        for entry in WalkDir::new(&path_buf)
             .into_iter()
             .filter_entry(|e| !repo::is_rslink(e))
             .filter_map(|e| e.ok())
@@ -89,7 +44,7 @@ pub fn add<'a>(command: AddCommand) -> Result<&'a str, &'a str> {
             }
 
             println!("{}", entry.path().display());
-            match add_file_to_linked(path.clone(), entry.into_path().to_path_buf()) {
+            match add_file_to_linked(path_buf.clone(), entry.into_path().to_path_buf()) {
                 Ok(_) => (),
                 Err(message) => println!("{}", message),
             }

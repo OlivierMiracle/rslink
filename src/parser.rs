@@ -5,6 +5,17 @@ pub trait Parsable {
     fn parse(&self);
 }
 
+#[derive(Default)]
+pub struct ArgumentPackage {
+    pub path: Option<String>,
+    pub file: Option<String>,
+
+    pub forced: bool,
+    pub all: bool,
+    pub destinations: bool,
+    pub repository: bool,
+}
+
 #[derive(Clone)]
 pub struct Argument {
     pub short_flag: &'static str,
@@ -15,6 +26,24 @@ pub struct Argument {
 }
 
 impl Argument {
+    pub fn unpack_string_value<'a>(self) -> Result<Option<String>, &'a str> {
+        match self.arg_value {
+            ArgumentValue::String(value) => match value {
+                Some(value) => Ok(Some(value)),
+                None => Ok(None),
+            },
+            ArgumentValue::Boolean(_) => Err(messages::IMPOSSIBLE_ERROR_MESSAGE),
+        }
+    }
+    pub fn unpack_bool_value<'a>(self) -> Result<bool, &'a str> {
+        match self.arg_value {
+            ArgumentValue::Boolean(value) => match value {
+                Some(value) => Ok(value),
+                None => Err(messages::LACKING_PARAMETER_MESSAGE),
+            },
+            ArgumentValue::String(_) => Err(messages::IMPOSSIBLE_ERROR_MESSAGE),
+        }
+    }
     pub fn path() -> Argument {
         Argument {
             short_flag: flags::PATH_SHORT_FLAG,
@@ -126,4 +155,39 @@ pub fn parse_arguments(
         }
     }
     Ok(parsed_args)
+}
+
+pub fn assign_args<'a>(args: Vec<Argument>) -> Result<ArgumentPackage, &'a str> {
+    let mut args_pack: ArgumentPackage = ArgumentPackage {
+        ..Default::default()
+    };
+    for arg in args {
+        match arg.arg_type {
+            ArgumentType::Path => match arg.unpack_string_value() {
+                Ok(value) => args_pack.path = value,
+                Err(err) => return Err(err),
+            },
+            ArgumentType::File => match arg.unpack_string_value() {
+                Ok(value) => args_pack.file = value,
+                Err(err) => return Err(err),
+            },
+            ArgumentType::Forced => match arg.unpack_bool_value() {
+                Ok(value) => args_pack.forced = value,
+                Err(err) => return Err(err),
+            },
+            ArgumentType::All => match arg.unpack_bool_value() {
+                Ok(value) => args_pack.all = value,
+                Err(err) => return Err(err),
+            },
+            ArgumentType::Destinations => match arg.unpack_bool_value() {
+                Ok(value) => args_pack.destinations = value,
+                Err(err) => return Err(err),
+            },
+            ArgumentType::Repository => match arg.unpack_bool_value() {
+                Ok(value) => args_pack.repository = value,
+                Err(err) => return Err(err),
+            },
+        };
+    }
+    Ok(args_pack)
 }

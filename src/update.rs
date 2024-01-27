@@ -1,27 +1,17 @@
-use crate::flags;
 use crate::messages;
 use crate::parser::Argument;
-use crate::parser::ArgumentType;
-use crate::repo;
-use crate::Command;
+use crate::parser::ArgumentPackage;
 
-pub fn update_parse(args: Vec<String>) -> Command {
-    let mut args: Vec<Argument> = vec![
+pub fn update_flags() -> Vec<Argument> {
+    let args: Vec<Argument> = vec![
         Argument::path(),
         Argument::destinations(),
         Argument::repository(),
     ];
-    Command::Update(args)
+
+    args
 }
 
-pub fn update_repo(args: Vec<Argument>) {
-    let path: String;
-    let repository: bool;
-    let destinations: bool;
-
-    for arg in args {
-        match arg.arg_type {
-            ArgumentType::Path => path = arg.arg_value,
-        }
-    }
+pub fn update_repo<'a>(args: ArgumentPackage) -> Result<&'a str, &'a str> {
+    Err(messages::IMPOSSIBLE_ERROR_MESSAGE)
 }
