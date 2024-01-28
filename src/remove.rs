@@ -14,7 +14,7 @@ pub fn remove_flags() -> Vec<Argument> {
 }
 
 pub fn remove<'a>(args: ArgumentPackage) -> Result<&'a str, &'a str> {
-    let path = match repo::validate_path(args.path, false) {
+    let path = match repo::validate_path(&args.path, false) {
         Ok(path) => path,
         Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
     };
@@ -23,9 +23,14 @@ pub fn remove<'a>(args: ArgumentPackage) -> Result<&'a str, &'a str> {
         return Err(messages::REPO_NOT_FOUND_MESSAGE);
     }
 
-    let file_path = match repo::validate_path(args.file, true) {
+    let file_path = match repo::validate_path(&args.file, true) {
         Ok(file_path) => file_path,
         Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
+    };
+
+    let file_path = match file_path.strip_prefix(args.path.unwrap()) {
+        Ok(path) => path.to_path_buf(),
+        Err(_) => return Err(messages::IMPOSSIBLE_ERROR_MESSAGE),
     };
 
     let mut linked_path = path.clone();
@@ -60,9 +65,7 @@ pub fn remove<'a>(args: ArgumentPackage) -> Result<&'a str, &'a str> {
     let mut counter = 0;
 
     for row in linked_contents.lines() {
-        let col: Vec<&str> = row.split(' ').collect();
-
-        if col[1].trim() == path_entry.trim() {
+        if row.trim() == path_entry.trim() {
             println!("{}", row);
             counter += 1;
             continue;

@@ -12,21 +12,30 @@ use crate::repo;
 use walkdir::WalkDir;
 
 pub fn add_flags() -> Vec<Argument> {
-    let args: Vec<Argument> = vec![Argument::path(), Argument::file(), Argument::all()];
+    let mut file_arg = Argument::file();
+    file_arg.is_required = false;
+
+    let args: Vec<Argument> = vec![Argument::path(), file_arg, Argument::all()];
 
     args
 }
 
 pub fn add<'a>(args: ArgumentPackage) -> Result<&'a str, &'a str> {
-    let path_buf = PathBuf::from(&args.path.unwrap());
+    let path = args.path.unwrap();
+    let path_buf = PathBuf::from(&path);
     if !repo::is_in_repo(&path_buf) {
         return Err(messages::REPO_NOT_FOUND_MESSAGE);
     }
 
     if !args.all {
-        let file_path = match repo::validate_path(args.file, true) {
+        let file_path = match repo::validate_path(&args.file, true) {
             Ok(file_path) => file_path,
             Err(_) => return Err(messages::INVALID_PARAMETER_MESSAGE),
+        };
+
+        let file_path = match file_path.strip_prefix(&path) {
+            Ok(path) => path.to_path_buf(),
+            Err(_) => return Err(messages::IMPOSSIBLE_ERROR_MESSAGE),
         };
 
         add_file_to_linked(path_buf, file_path)
@@ -43,8 +52,13 @@ pub fn add<'a>(args: ArgumentPackage) -> Result<&'a str, &'a str> {
                 continue;
             }
 
-            println!("{}", entry.path().display());
-            match add_file_to_linked(path_buf.clone(), entry.into_path().to_path_buf()) {
+            let entry_path = match entry.path().strip_prefix(&path) {
+                Ok(path) => path.to_path_buf(),
+                Err(_) => return Err(messages::IMPOSSIBLE_ERROR_MESSAGE),
+            };
+
+            println!("{}", entry_path.display());
+            match add_file_to_linked(path_buf.clone(), entry_path.to_path_buf()) {
                 Ok(_) => (),
                 Err(message) => println!("{}", message),
             }
@@ -81,14 +95,12 @@ fn add_file_to_linked<'a>(path: PathBuf, file_path: PathBuf) -> Result<&'a str, 
     }
 
     for row in linked_contents.lines() {
-        let col: Vec<&str> = row.split(' ').collect();
-
-        if col[1].trim() == path_entry.trim() {
+        if row.trim() == path_entry.trim() {
             return Err(messages::ALREADY_LINKED_MESSAGE);
         }
     }
 
-    let line = "link ".to_string() + path_entry.as_str();
+    let line = path_entry.as_str();
     let buf = line.as_bytes();
 
     match linked_file.write(buf) {

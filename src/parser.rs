@@ -5,7 +5,7 @@ pub trait Parsable {
     fn parse(&self);
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct ArgumentPackage {
     pub path: Option<String>,
     pub file: Option<String>,
@@ -16,7 +16,7 @@ pub struct ArgumentPackage {
     pub repository: bool,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Argument {
     pub short_flag: &'static str,
     pub long_flag: &'static str,
@@ -100,7 +100,7 @@ impl Argument {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum ArgumentType {
     Path,
     File,
@@ -110,7 +110,7 @@ pub enum ArgumentType {
     Repository,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum ArgumentValue {
     Boolean(Option<bool>),
     String(Option<String>),
@@ -123,11 +123,12 @@ pub fn parse_arguments(
     let mut parsed_args: Vec<Argument> = flags.clone();
     let c_max = &args.len();
 
-    for flag in &mut parsed_args {
-        loop {
-            let mut c: usize = 2usize;
+    'flags_loop: for flag in &mut parsed_args {
+        let mut c: usize = 2usize;
+
+        'args_loop: loop {
             if &c >= c_max {
-                break;
+                break 'args_loop;
             }
 
             let arg = &args[c];
@@ -142,16 +143,18 @@ pub fn parse_arguments(
                         flag.arg_value = ArgumentValue::Boolean(Some(true))
                     }
                 }
-            } else if flag.is_required {
-                return Err(messages::LACKING_PARAMETER_MESSAGE);
-            } else {
-                match flag.arg_value {
-                    ArgumentValue::Boolean(_) => flag.arg_value = ArgumentValue::Boolean(None),
-                    ArgumentValue::String(_) => flag.arg_value = ArgumentValue::String(None),
-                }
+                continue 'flags_loop;
             }
-
             c += 1usize;
+        }
+
+        if flag.is_required {
+            return Err(messages::LACKING_PARAMETER_MESSAGE);
+        } else {
+            match flag.arg_value {
+                ArgumentValue::Boolean(_) => flag.arg_value = ArgumentValue::Boolean(Some(false)),
+                ArgumentValue::String(_) => flag.arg_value = ArgumentValue::String(None),
+            }
         }
     }
     Ok(parsed_args)

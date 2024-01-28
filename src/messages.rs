@@ -66,3 +66,6 @@ pub const ALREADY_LINKED_MESSAGE: &str =
 
 pub const IMPOSSIBLE_ERROR_MESSAGE: &str =
     "This error message should never display itself. If it is, we are doomed  ┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻";
+
+pub const DESTINATION_UPDATE_ERROR_MESSAGE: &str =
+    "Symlinks cannot be created or deleted. Ensure you have required priviledges and the destination path exists.";

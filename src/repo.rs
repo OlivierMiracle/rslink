@@ -1,8 +1,17 @@
+use std::fs::OpenOptions;
+use std::io::Read;
+use std::io::Write;
+
 use std::{env::current_dir, ffi::OsStr, path::Path, path::PathBuf};
 
 use walkdir::DirEntry;
 
 use crate::messages::{self, INVALID_PARAMETER_MESSAGE};
+
+pub enum RepoFile {
+    Linked,
+    Destinations,
+}
 
 pub fn is_in_repo(path: &PathBuf) -> bool {
     if path.is_dir() {
@@ -22,7 +31,7 @@ pub fn is_rslink(entry: &DirEntry) -> bool {
         .unwrap_or(false)
 }
 
-pub fn validate_path(path: Option<String>, is_required: bool) -> Result<PathBuf, String> {
+pub fn validate_path(path: &Option<String>, is_required: bool) -> Result<PathBuf, String> {
     match path {
         Some(given_path) => {
             let path = PathBuf::from(&given_path);
@@ -47,4 +56,34 @@ pub fn validate_path(path: Option<String>, is_required: bool) -> Result<PathBuf,
             }
         }
     }
+}
+
+pub fn read_repo_file<'a>(path: &PathBuf, repo_file: RepoFile) -> Result<Vec<String>, &'a str> {
+    let mut linked_path = path.clone();
+    let relative_path = match repo_file {
+        RepoFile::Linked => ".rslink/linked.txt",
+        RepoFile::Destinations => ".rslink/destinations.txt",
+    };
+    linked_path.push(relative_path);
+
+    let mut linked_file = match OpenOptions::new().read(true).open(linked_path) {
+        Ok(file) => file,
+        Err(_) => {
+            return Err(messages::FILE_OPEN_ERROR_MESSAGE);
+        }
+    };
+
+    let mut linked_contents: String = "".to_string();
+    match linked_file.read_to_string(&mut linked_contents) {
+        Ok(_) => (),
+        Err(_) => return Err(messages::FILE_READ_ERROR_MESSAGE),
+    }
+
+    let mut rows: Vec<String> = vec![];
+
+    for row in linked_contents.lines() {
+        rows.push(row.to_string());
+    }
+
+    Ok(rows)
 }

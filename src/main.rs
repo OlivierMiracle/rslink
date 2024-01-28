@@ -16,7 +16,6 @@ use crate::parser::{assign_args, parse_arguments};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    dbg!(&args);
 
     if (*args).len() == 1usize {
         println!("Not enough arguments. Run {} help for help.", &args[0]);
@@ -67,6 +66,8 @@ fn main() {
             return;
         }
     };
+
+    dbg!(&command_package);
 
     match command {
         Command::Help => println!("{}", messages::HELP_MESSAGE),

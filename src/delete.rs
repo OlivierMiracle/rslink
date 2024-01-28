@@ -11,7 +11,7 @@ pub fn delete_flags() -> Vec<Argument> {
 }
 
 pub fn delete_repo(args: ArgumentPackage) {
-    let path = match repo::validate_path(args.path, false) {
+    let path = match repo::validate_path(&args.path, false) {
         Ok(path) => path,
         Err(_) => return,
     };
