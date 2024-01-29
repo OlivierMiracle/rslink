@@ -95,10 +95,24 @@ fn compare_contents(
 
 fn execute_action<'a>(action: SymlinkAction) -> Result<(), &'a str> {
     match action {
-        SymlinkAction::Create(source, destination) => match fs::symlink(source, destination) {
-            Ok(_) => Ok(()),
-            Err(_) => Err(messages::DESTINATION_UPDATE_ERROR_MESSAGE),
-        },
+        SymlinkAction::Create(source, destination) => {
+            let mut trimmed_destination = PathBuf::from(&destination);
+            trimmed_destination.pop();
+            let trimmed_destination = trimmed_destination.to_str().unwrap();
+            dbg!(&trimmed_destination);
+            match std::fs::create_dir_all(trimmed_destination) {
+                Ok(_) => (),
+                Err(_) => return Err(messages::IMPOSSIBLE_ERROR_MESSAGE),
+            };
+
+            dbg!(&source);
+            dbg!(&destination);
+
+            match fs::symlink(source, destination) {
+                Ok(_) => Ok(()),
+                Err(_) => Err(messages::DESTINATION_UPDATE_ERROR_MESSAGE),
+            }
+        }
         SymlinkAction::Delete(destination) => match std::fs::remove_file(destination) {
             Ok(_) => Ok(()),
             Err(_) => Err(messages::DESTINATION_UPDATE_ERROR_MESSAGE),
