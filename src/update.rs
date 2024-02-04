@@ -4,6 +4,7 @@ use crate::messages;
 use crate::parser::Argument;
 use crate::parser::ArgumentPackage;
 use crate::repo;
+use crate::repo::ensure_backslash;
 use crate::repo::RepoFile;
 
 use std::os::unix::fs;
@@ -22,7 +23,7 @@ pub fn update_flags() -> Vec<Argument> {
 }
 
 pub fn update_repo<'a>(args: ArgumentPackage) -> Result<&'a str, &'a str> {
-    let path = &args.path.unwrap();
+    let path = ensure_backslash(args.path.unwrap());
     let path_buf = PathBuf::from(&path);
     if !repo::is_in_repo(&path_buf) {
         return Err(messages::REPO_NOT_FOUND_MESSAGE);
@@ -59,27 +60,34 @@ fn compare_contents(
 
     dbg!(&linked_files);
     'entry_loop: for entry in WalkDir::new(&dest).into_iter().filter_map(|e| e.ok()) {
-        if repo::is_rslink(&entry) {
+        if repo::is_rslink(entry.path()) {
             continue;
         }
-        if !entry.path().metadata().unwrap().is_file() {
+
+        dbg!(&entry);
+        if !entry.path_is_symlink() {
             continue;
         }
 
         let entry_path = entry.path().to_str().unwrap().to_string();
-
         dbg!(&entry_path);
 
-        'linked_loop: for i in (0..(linked_files.len() - 1)).rev() {
+        for i in (0..linked_files.len()).rev() {
+            dbg!(&i);
+            dbg!(linked_files[i].as_str());
             let if_equal = entry_path.ends_with(linked_files[i].as_str());
 
             if if_equal {
-                linked_files.pop();
+                dbg!("delete: ");
+                dbg!(linked_files[i].as_str());
+                linked_files.remove(i);
                 continue 'entry_loop;
             }
         }
         actions.push(SymlinkAction::Delete(entry_path.clone()));
     }
+
+    dbg!(&linked_files);
 
     for linked in linked_files {
         actions.push(SymlinkAction::Create(

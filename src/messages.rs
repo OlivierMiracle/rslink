@@ -44,7 +44,7 @@ pub const LACKING_PARAMETER_MESSAGE: &str =
     "Your command lacks required parameter. Make sure you include it.";
 
 pub const REPO_ALREADY_EXISTS_MESSAGE: &str =
-    "You are trying to create a repo where it already exists. Delete it or force creation of new one.";
+    "You are trying to create a repo where it already exists. Delete it or force creation of new one, but it does not make sense either way...";
 
 pub const REPO_DOES_NOT_EXIST_MESSAGE: &str =
     "Repo does not exist at that location. Try your luck somewhere else :D";
@@ -65,7 +65,10 @@ pub const ALREADY_LINKED_MESSAGE: &str =
     "File was already linked, don't make me to do things twice ;-;";
 
 pub const IMPOSSIBLE_ERROR_MESSAGE: &str =
-    "This error message should never display itself. If it is, we are doomed  ┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻";
+    "This error message should never display itself. If it was, we are doomed  ┻━┻ ︵ヽ(`Д´)ﾉ︵ ┻━┻";
 
 pub const DESTINATION_UPDATE_ERROR_MESSAGE: &str =
     "Symlinks cannot be created or deleted. Ensure you have required priviledges and the destination path exists.";
+
+pub const DESTINATION_IS_NOT_A_DIRECTORY: &str =
+    "Destination is not a directory. Are you trying to trick me, hm?";
